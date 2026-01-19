@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Icons</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        a { display: inline-block; margin: 10px; padding: 10px 20px; background: #4a90d9; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>StatQuest Icon Generator</h1>
+    <p>Click the links below to download the PNG icons:</p>
+
+    <h2>192x192</h2>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <br>
+    <a id="download192" download="icon-192.png">Download icon-192.png</a>
+
+    <h2>512x512</h2>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    <br>
+    <a id="download512" download="icon-512.png">Download icon-512.png</a>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const cornerRadius = size * 0.2;
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4a90d9');
+            gradient.addColorStop(1, '#3a7bc8');
+
+            // Rounded rectangle
+            ctx.beginPath();
+            ctx.moveTo(cornerRadius, 0);
+            ctx.lineTo(size - cornerRadius, 0);
+            ctx.quadraticCurveTo(size, 0, size, cornerRadius);
+            ctx.lineTo(size, size - cornerRadius);
+            ctx.quadraticCurveTo(size, size, size - cornerRadius, size);
+            ctx.lineTo(cornerRadius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - cornerRadius);
+            ctx.lineTo(0, cornerRadius);
+            ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Text "SQ"
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SQ', size / 2, size * 0.42);
+
+            // Bar chart
+            const bars = [
+                { x: 0.16, h: 0.13 },
+                { x: 0.29, h: 0.18 },
+                { x: 0.42, h: 0.26 },
+                { x: 0.55, h: 0.21 },
+                { x: 0.68, h: 0.29 }
+            ];
+
+            const barWidth = size * 0.1;
+            const baseY = size * 0.85;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            bars.forEach(bar => {
+                const x = size * bar.x;
+                const height = size * bar.h;
+                const y = baseY - height;
+                const radius = size * 0.015;
+
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + barWidth - radius, y);
+                ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+                ctx.lineTo(x + barWidth, baseY - radius);
+                ctx.quadraticCurveTo(x + barWidth, baseY, x + barWidth - radius, baseY);
+                ctx.lineTo(x + radius, baseY);
+                ctx.quadraticCurveTo(x, baseY, x, baseY - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        // Generate 192x192
+        const canvas192 = document.getElementById('canvas192');
+        drawIcon(canvas192, 192);
+        document.getElementById('download192').href = canvas192.toDataURL('image/png');
+
+        // Generate 512x512
+        const canvas512 = document.getElementById('canvas512');
+        drawIcon(canvas512, 512);
+        document.getElementById('download512').href = canvas512.toDataURL('image/png');
+    </script>
+</body>
+</html>
