@@ -192,9 +192,27 @@ const STORAGE_KEY = 'statquest-watched';
 
 // Global state
 let watchedVideos = {};
+let storageAvailable = false;
+
+// Check if localStorage is available and working
+function checkStorageAvailable() {
+    try {
+        const testKey = '__storage_test__';
+        localStorage.setItem(testKey, testKey);
+        const result = localStorage.getItem(testKey);
+        localStorage.removeItem(testKey);
+        return result === testKey;
+    } catch (e) {
+        return false;
+    }
+}
 
 // Initialize the app
 function init() {
+    storageAvailable = checkStorageAvailable();
+    if (!storageAvailable) {
+        console.warn('localStorage is not available. Progress will not be saved.');
+    }
     loadWatchedVideos();
     renderCategories();
     updateOverallProgress();
@@ -202,10 +220,23 @@ function init() {
 
 // Load watched videos from localStorage
 function loadWatchedVideos() {
+    if (!storageAvailable) {
+        watchedVideos = {};
+        return;
+    }
+
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            watchedVideos = JSON.parse(stored);
+        if (stored && stored !== 'undefined' && stored !== 'null') {
+            const parsed = JSON.parse(stored);
+            // Validate that parsed data is an object
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                watchedVideos = parsed;
+            } else {
+                watchedVideos = {};
+            }
+        } else {
+            watchedVideos = {};
         }
     } catch (e) {
         console.error('Error loading watched videos:', e);
@@ -215,8 +246,19 @@ function loadWatchedVideos() {
 
 // Save watched videos to localStorage
 function saveWatchedVideos() {
+    if (!storageAvailable) {
+        return;
+    }
+
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(watchedVideos));
+        const dataToSave = JSON.stringify(watchedVideos);
+        localStorage.setItem(STORAGE_KEY, dataToSave);
+
+        // Verify the save was successful by reading it back
+        const verified = localStorage.getItem(STORAGE_KEY);
+        if (verified !== dataToSave) {
+            console.error('localStorage save verification failed');
+        }
     } catch (e) {
         console.error('Error saving watched videos:', e);
     }
@@ -232,7 +274,15 @@ function toggleWatched(videoId, event) {
     if (event) {
         event.stopPropagation();
     }
-    watchedVideos[videoId] = !isWatched(videoId);
+
+    // Explicitly set to boolean true or false (not toggle of undefined)
+    const currentlyWatched = watchedVideos[videoId] === true;
+    if (currentlyWatched) {
+        delete watchedVideos[videoId]; // Remove from object when unchecked
+    } else {
+        watchedVideos[videoId] = true;
+    }
+
     saveWatchedVideos();
     updateVideoUI(videoId);
     updateCategoryProgress(findCategoryForVideo(videoId));
@@ -361,6 +411,20 @@ function updateOverallProgress() {
     if (progressFill) progressFill.style.width = `${progressPercent}%`;
     if (progressText) progressText.textContent = `${Math.round(progressPercent)}% Complete (${watchedCount}/${totalVideos})`;
 }
+
+// Save data before page unloads (backup save)
+window.addEventListener('beforeunload', function() {
+    if (storageAvailable && Object.keys(watchedVideos).length > 0) {
+        saveWatchedVideos();
+    }
+});
+
+// Also save when page visibility changes (handles mobile browser behavior)
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && storageAvailable) {
+        saveWatchedVideos();
+    }
+});
 
 // Initialize app when DOM is ready
 if (document.readyState === 'loading') {
